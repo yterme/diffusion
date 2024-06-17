@@ -11,11 +11,12 @@ from visualization import plot_losses
 
 
 
-def train_denoiser(loader  : DataLoader,
-                  denoiser   : nn.Module,
-                  schedule: Schedule,
-                  epochs  : int,
-                  ):
+def train_denoiser(
+        loader: DataLoader,
+        denoiser: nn.Module,
+        schedule: Schedule,
+        epochs: int,
+    ):
     optimizer = torch.optim.Adam(denoiser.parameters())
     losses = []
     for _ in tqdm(range(epochs)):
@@ -33,6 +34,7 @@ def train_denoiser(loader  : DataLoader,
 def main(
         # dataset_name="swissroll",
         dataset_name="mnist",
+        load_denoiser=False,
 ):
     if dataset_name == "mnist":
         encoder = CNNEncoder()
@@ -42,6 +44,8 @@ def main(
     dataset = get_dataset(dataset_name, encoder)
     dataloader  = DataLoader(dataset, batch_size=64)
     denoiser = Denoiser(dim=get_dimension(dataset_name), hidden_dims=(16,128,128,128,128,16))
+    if load_denoiser:
+        denoiser.load_state_dict(torch.load(f"models/{dataset_name}_denoiser.pth"))
     schedule = ScheduleLogLinear(N=200, sigma_min=0.005, sigma_max=10)
     losses  = train_denoiser(dataloader, denoiser, schedule, epochs=1000)
     plot_losses(losses, f"visualizations/loss_denoiser_{dataset_name}.png")
